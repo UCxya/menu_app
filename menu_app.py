@@ -9,6 +9,7 @@
 import base64
 from nicegui import ui
 
+#gitのテスト
 
 # 献立はここを編集します。画像を写真にする場合は image を変更します。
 # 例: "image": "images/chicken.jpg"
