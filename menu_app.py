@@ -1,31 +1,54 @@
-"""献立スライド画面の試作品。
+"""献立スライド画面の試作品（巨大切り替えボタン・大型写真デザイン）。
 
 準備: python -m pip install nicegui
 起動: python menu_app.py
 ブラウザで http://localhost:8081 を開いてください。
-画像と栄養値は表示用のサンプルです。記録の保存はしません。
 """
 
 import base64
 from nicegui import ui
 
-#gitのテスト2
-#テストするよーん
-# 献立はここを編集します。画像を写真にする場合は image を変更します。
-# 例: "image": "images/chicken.jpg"
 MENUS = [
-    {"name": "鶏むね肉の彩り定食", "tag": "しっかり食べたい日に",
-     "foods": ["ご飯", "鶏むね肉のソテー", "ブロッコリー", "みそ汁"],
-     "kcal": 620, "protein": 38, "carbs": 74, "fat": 19,
-     "color": "#d4a06a", "background": "#f0e8dc", "image": None},
-    {"name": "焼き鮭と小鉢の定食", "tag": "魚が主役の献立",
-     "foods": ["ご飯", "焼き鮭", "冷ややっこ", "小松菜のおひたし"],
-     "kcal": 580, "protein": 32, "carbs": 69, "fat": 20,
-     "color": "#ed987e", "background": "#e4ece8", "image": None},
-    {"name": "豆腐ハンバーグ定食", "tag": "気分を変えたい日に",
-     "foods": ["ご飯", "豆腐ハンバーグ", "サラダ", "きのこスープ"],
-     "kcal": 510, "protein": 25, "carbs": 65, "fat": 17,
-     "color": "#9c674b", "background": "#eee5de", "image": None},
+    {
+        "id": 1,
+        "name": "鶏むね肉の彩り定食",
+        "tag": "高タンパク・低脂質",
+        "category": "muscle",
+        "foods": ["ご飯", "鶏むね肉のソテー", "ブロッコリー", "みそ汁"],
+        "kcal": 520, "protein": 42, "carbs": 65, "fat": 8,
+        "cost_est": "約 250円",
+        "color": "#d4a06a", "background": "#f0e8dc", "image": None
+    },
+    {
+        "id": 2,
+        "name": "焼き鮭と豆腐の定食",
+        "tag": "バランス良好・高タンパク",
+        "category": "muscle",
+        "foods": ["ご飯", "焼き鮭", "冷ややっこ", "小松菜のおひたし"],
+        "kcal": 480, "protein": 35, "carbs": 60, "fat": 10,
+        "cost_est": "約 320円",
+        "color": "#ed987e", "background": "#e4ece8", "image": None
+    },
+    {
+        "id": 3,
+        "name": "モヤシと豆腐の節約炒め定食",
+        "tag": "コスパ抜群・ヘルシー",
+        "category": "saving",
+        "foods": ["ご飯", "豆腐ともやしの卵炒め", "きゅうりの浅漬け", "わかめスープ"],
+        "kcal": 450, "protein": 22, "carbs": 68, "fat": 12,
+        "cost_est": "約 130円",
+        "color": "#9c674b", "background": "#eee5de", "image": None
+    },
+    {
+        "id": 4,
+        "name": "豆と鶏そぼろの節約丼定食",
+        "tag": "安くて満足感たっぷり",
+        "category": "saving",
+        "foods": ["鶏そぼろと豆のどんぶり", "キャベツの塩昆布和え", "みそ汁"],
+        "kcal": 510, "protein": 28, "carbs": 72, "fat": 11,
+        "cost_est": "約 160円",
+        "color": "#8a9a86", "background": "#e8ece6", "image": None
+    },
 ]
 
 
@@ -33,112 +56,155 @@ def meal_image(menu):
     """写真が未登録でも動くように、仮の献立イラストを用意します。"""
     if menu["image"]:
         return menu["image"]
-    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="900" height="460" viewBox="0 0 900 460">
-      <rect width="900" height="460" fill="{menu['background']}"/>
-      <rect x="145" y="42" width="610" height="380" rx="28" fill="#b18b66"/>
-      <rect x="157" y="54" width="586" height="356" rx="22" fill="#c9a57e"/>
-      <ellipse cx="464" cy="210" rx="175" ry="123" fill="#000" opacity=".09"/>
-      <ellipse cx="454" cy="197" rx="175" ry="123" fill="#fbfaf5"/>
-      <ellipse cx="454" cy="197" rx="150" ry="100" fill="#f1efe7"/>
-      <g transform="rotate(-12 436 188)">
-        <rect x="343" y="139" width="185" height="95" rx="35" fill="{menu['color']}"/>
-        <path d="M377 152l-10 67 M412 149l-10 73 M447 148l-10 76 M482 153l-10 66" stroke="#78452e" stroke-width="5" opacity=".45"/>
+    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
+      <rect width="900" height="600" fill="{menu['background']}"/>
+      <rect x="100" y="50" width="700" height="500" rx="35" fill="#b18b66"/>
+      <rect x="115" y="65" width="670" height="470" rx="28" fill="#c9a57e"/>
+      <ellipse cx="450" cy="290" rx="240" ry="160" fill="#000" opacity=".09"/>
+      <ellipse cx="440" cy="275" rx="240" ry="160" fill="#fbfaf5"/>
+      <ellipse cx="440" cy="275" rx="210" ry="135" fill="#f1efe7"/>
+      <g transform="rotate(-10 430 260)">
+        <rect x="290" y="190" width="260" height="130" rx="45" fill="{menu['color']}"/>
+        <path d="M330 205l-12 90 M380 200l-12 100 M430 200l-12 100 M480 205l-12 90" stroke="#78452e" stroke-width="7" opacity=".45"/>
       </g>
-      <g fill="#638a46"><circle cx="546" cy="170" r="22"/><circle cx="567" cy="195" r="24"/><circle cx="539" cy="217" r="20"/></g>
-      <g fill="#d65f46"><circle cx="520" cy="238" r="14"/><circle cx="555" cy="243" r="12"/></g>
-      <ellipse cx="276" cy="322" rx="91" ry="63" fill="#203b44"/>
-      <ellipse cx="276" cy="312" rx="79" ry="49" fill="#f6f2df"/>
-      <g fill="#fffdf0"><circle cx="244" cy="305" r="19"/><circle cx="276" cy="296" r="24"/><circle cx="306" cy="307" r="21"/><circle cx="274" cy="322" r="25"/></g>
-      <ellipse cx="627" cy="325" rx="73" ry="54" fill="#653e31"/>
-      <ellipse cx="627" cy="318" rx="61" ry="40" fill="#b78b52"/>
-      <g fill="#e8d9af"><rect x="607" y="300" width="16" height="14" rx="3"/><rect x="632" y="321" width="17" height="13" rx="3"/></g>
-      <g fill="#496a3e"><ellipse cx="647" cy="307" rx="9" ry="4"/><ellipse cx="605" cy="331" rx="8" ry="4"/></g>
-      <path d="M701 91v232 M713 91v232" stroke="#654735" stroke-width="7" stroke-linecap="round"/>
+      <g fill="#638a46"><circle cx="570" cy="230" r="30"/><circle cx="600" cy="265" r="32"/><circle cx="560" cy="295" r="28"/></g>
+      <g fill="#d65f46"><circle cx="530" cy="325" r="18"/><circle cx="575" cy="330" r="16"/></g>
+      <ellipse cx="220" cy="420" rx="125" ry="85" fill="#203b44"/>
+      <ellipse cx="220" cy="405" rx="110" ry="68" fill="#f6f2df"/>
+      <g fill="#fffdf0"><circle cx="175" cy="395" r="26"/><circle cx="220" cy="380" r="32"/><circle cx="260" cy="398" r="28"/><circle cx="218" cy="418" r="34"/></g>
+      <ellipse cx="670" cy="425" rx="100" ry="72" fill="#653e31"/>
+      <ellipse cx="670" cy="415" rx="85" ry="53" fill="#b78b52"/>
+      <g fill="#e8d9af"><rect x="640" y="390" width="22" height="18" rx="4"/><rect x="675" y="420" width="24" height="18" rx="4"/></g>
+      <g fill="#496a3e"><ellipse cx="695" cy="400" rx="12" ry="5"/><ellipse cx="638" cy="432" rx="11" ry="5"/></g>
+      <path d="M780 120v310 M796 120v310" stroke="#654735" stroke-width="9" stroke-linecap="round"/>
     </svg>'''
     return "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode()
 
 
 @ui.page("/")
 def main_page():
-    # 各ブラウザの画面内で選択を管理します。
     selected = {"menu": None}
+    filter_state = {"category": "all"}
+
     ui.colors(primary="#39705a")
     ui.add_css('''
         body {background:#f6f7f3; color:#263c32; font-family: sans-serif;}
-        .page {width:100%; max-width:1120px; margin:auto; padding:28px 16px;}
-        .layout {display:grid; grid-template-columns:300px minmax(0,1fr); gap:24px; width:100%;}
+        .page {width:100%; max-width:1200px; margin:auto; padding:28px 16px;}
+        .layout {display:grid; grid-template-columns: 1.4fr 1fr; gap:24px; width:100%;}
         .panel {border:1px solid #e1e7df; border-radius:22px; box-shadow:none; padding:24px; background:white;}
         .muted {color:#78877d;}
-        .q-carousel {border-radius:18px; background:#eef2eb;}
+        .q-carousel {border-radius:22px; background:#eef2eb;}
         .q-carousel__slide {padding:0;}
-        @media(max-width:760px) {.layout {grid-template-columns:1fr;} .page {padding:16px 10px;}}
+        @media(max-width:900px) {.layout {grid-template-columns:1fr;}}
     ''')
 
     def select_menu(menu):
         selected["menu"] = menu
         selection.refresh()
-        ui.notify(f"{menu['name']}を選びました", type="positive")
+        ui.notify(f"「{menu['name']}」を決定しました！", type="positive")
 
     @ui.refreshable
     def selection():
         menu = selected["menu"]
-        with ui.column().classes("w-full gap-4"):
-            ui.label("選んだ献立の栄養素").classes("text-lg font-bold")
-            ui.label("1食分 / すべてサンプル値です").classes("muted text-xs")
-            for label, key, target, color in [
-                ("タンパク質", "protein", 40, "#39705a"),
-                ("炭水化物", "carbs", 80, "#d6ab61"),
-                ("脂質", "fat", 20, "#a789aa"),
-            ]:
-                amount = menu[key] if menu else 0
-                with ui.row().classes("w-full justify-between"):
-                    ui.label(label)
-                    ui.label(f"{amount} / {target} g").classes("font-bold")
-                ui.linear_progress(value=min(amount / target, 1), color=color, show_value=False).props("rounded size=12px")
-            ui.separator()
-            ui.label(f"{menu['kcal']} kcal" if menu else "献立を選んでください").classes("text-2xl font-bold")
-            ui.label(menu["name"] if menu else "右側の写真を切り替えて選べます").classes("muted text-sm")
-            ui.label("バーの基準は動作確認用の仮の値です。個人に合わせた栄養目標ではありません。").classes("muted text-xs")
+        with ui.column().classes("w-full gap-3"):
+            ui.label("決定した献立").classes("text-xs font-bold text-gray-400 tracking-wider")
+            if menu:
+                ui.label(menu["name"]).classes("text-xl font-bold text-green-900")
+                ui.label(f"{menu['kcal']} kcal ・ 目安: {menu['cost_est']}").classes("text-sm font-bold text-amber-800")
+                ui.separator()
+                for label, key, target, color in [
+                    ("タンパク質", "protein", 40, "#39705a"),
+                    ("炭水化物", "carbs", 80, "#d6ab61"),
+                    ("脂質", "fat", 20, "#a789aa"),
+                ]:
+                    amount = menu[key]
+                    with ui.row().classes("w-full justify-between text-xs"):
+                        ui.label(label)
+                        ui.label(f"{amount} / {target} g").classes("font-bold")
+                    ui.linear_progress(value=min(amount / target, 1), color=color, show_value=False).props("rounded size=8px")
+            else:
+                ui.label("未選択").classes("text-lg font-bold text-gray-400")
+                ui.label("右側のパネルから「この献立にする」をクリックしてください。").classes("muted text-xs")
 
-    with ui.column().classes("page gap-6"):
-        with ui.row().classes("w-full items-center justify-between"):
-            with ui.column().classes("gap-1"):
-                ui.label("MENU DAYS").classes("text-xs font-bold tracking-widest muted")
-                ui.label("今日、何を食べよう？").classes("text-3xl font-bold")
-            ui.label("献立を選ぶ画面の試作品").classes("muted text-sm")
-        ui.label("用意されたセットから、今日の気分に合う献立を選びましょう。").classes("muted")
+    @ui.refreshable
+    def main_content():
+        cat = filter_state["category"]
+        filtered_menus = MENUS if cat == "all" else [m for m in MENUS if m["category"] == cat]
+
+        # 【変更点】約3倍のサイズに拡大したフィルターボタン
+        with ui.row().classes("gap-4 mb-4 w-full flex-wrap"):
+            def set_filter(c):
+                filter_state["category"] = c
+                main_content.refresh()
+
+            # text-lg, px-8 (横パディング大), py-3 (縦パディング増) で約3倍の大きさに調整
+            ui.button("すべて", on_click=lambda: set_filter("all")) \
+                .props("unelevated" if cat == "all" else "outline") \
+                .classes("rounded-2xl text-lg px-8 py-3 font-bold shadow-sm")
+            
+            ui.button("💪 筋トレ向け (高タンパク)", on_click=lambda: set_filter("muscle")) \
+                .props("unelevated" if cat == "muscle" else "outline") \
+                .classes("rounded-2xl text-lg px-8 py-3 font-bold shadow-sm")
+            
+            ui.button("👛 節約向け (低コスト)", on_click=lambda: set_filter("saving")) \
+                .props("unelevated" if cat == "saving" else "outline") \
+                .classes("rounded-2xl text-lg px-8 py-3 font-bold shadow-sm")
+
+        if not filtered_menus:
+            ui.label("該当する献立がありません").classes("muted p-4")
+            return
 
         with ui.element("div").classes("layout"):
-            with ui.card().classes("panel h-fit"):
-                selection()
+            # 【左側】大型写真スライド
+            with ui.column().classes("w-full gap-2"):
+                with ui.carousel(animated=True, arrows=True, navigation=True).props(
+                    "height=420px infinite swipeable control-color=primary"
+                ).classes("w-full shadow-sm") as carousel:
+                    for i, menu in enumerate(filtered_menus):
+                        with ui.carousel_slide(name=str(i)):
+                            ui.image(meal_image(menu)).classes("w-full h-full").props("fit=cover no-spinner")
+
+            # 【右側】メニュー詳細と選択パネル
             with ui.column().classes("w-full gap-4"):
-                with ui.card().classes("panel w-full gap-4"):
-                    with ui.row().classes("w-full justify-between items-center"):
-                        ui.label("おすすめの献立セット").classes("text-xl font-bold")
-                        ui.label("3セット").classes("muted text-sm")
-                    ui.label("左右の矢印、下の丸、またはスワイプで切り替え").classes("muted text-xs")
-                    with ui.carousel(animated=True, arrows=True, navigation=True).props(
-                        "height=285px infinite swipeable control-color=primary"
-                    ).classes("w-full") as carousel:
-                        for i, menu in enumerate(MENUS):
-                            with ui.carousel_slide(name=str(i)):
-                                ui.image(meal_image(menu)).classes("w-full h-full").props("fit=cover no-spinner")
+                @ui.refreshable
+                def menu_detail():
+                    idx = int(carousel.value or 0)
+                    if idx >= len(filtered_menus):
+                        idx = 0
+                    menu = filtered_menus[idx]
 
-                    @ui.refreshable
-                    def menu_detail():
-                        menu = MENUS[int(carousel.value or 0)]
-                        ui.label(menu["tag"]).classes("text-sm text-green-700")
+                    with ui.card().classes("panel w-full gap-3"):
+                        with ui.row().classes("items-center justify-between w-full"):
+                            ui.label(menu["tag"]).classes("text-xs font-bold text-green-700 bg-green-50 px-3 py-1 rounded-full")
+                            ui.label(f"目安: {menu['cost_est']}").classes("text-xs font-bold text-amber-900 bg-amber-100 px-3 py-1 rounded-full")
+                        
                         ui.label(menu["name"]).classes("text-2xl font-bold")
-                        with ui.row().classes("gap-2"):
+                        
+                        with ui.row().classes("gap-1.5"):
                             for food in menu["foods"]:
-                                ui.label(food).classes("bg-gray-100 rounded-full px-3 py-1 text-sm")
-                        ui.label(f"{menu['kcal']} kcal ・ タンパク質 {menu['protein']} g").classes("muted text-sm")
-                        ui.button("この献立にする", icon="check", on_click=lambda: select_menu(menu)).classes("w-full rounded-xl").props("unelevated size=lg")
+                                ui.label(food).classes("bg-gray-100 rounded-lg px-2.5 py-1 text-xs text-gray-700")
 
-                    menu_detail()
-                    carousel.on_value_change(menu_detail.refresh)
-                ui.label("写真の代わりに仮のイラストを表示しています。献立の保存や自動提案はまだ行いません。").classes("muted text-xs px-2")
+                        ui.label(f"{menu['kcal']} kcal / タンパク質 {menu['protein']}g / 脂質 {menu['fat']}g").classes("muted text-xs font-bold mt-1")
+
+                        ui.button("この献立にする", icon="check", on_click=lambda: select_menu(menu))\
+                            .classes("w-full rounded-xl mt-2").props("unelevated size=lg")
+
+                menu_detail()
+                carousel.on_value_change(menu_detail.refresh)
+
+                with ui.card().classes("panel w-full"):
+                    selection()
+
+    # ヘッダーとメインレイアウト
+    with ui.column().classes("page gap-4"):
+        with ui.row().classes("w-full items-center justify-between"):
+            with ui.column().classes("gap-0.5"):
+                ui.label("MENU DAYS").classes("text-xs font-bold tracking-widest muted")
+                ui.label("今日、何を食べよう？").classes("text-2xl font-bold")
+            ui.label("目的別献立セレクター").classes("muted text-xs")
+
+        main_content()
 
 
 if __name__ == "__main__":
-    ui.run(title="MENU DAYS | 献立セット", host="127.0.0.1", port=8081, reload=False)
+    ui.run(title="MENU DAYS | 大型ボタン＆大型写真ビュー", host="127.0.0.1", port=8081, reload=False)
