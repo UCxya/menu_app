@@ -2,7 +2,7 @@
 準備: python -m pip install nicegui
 起動: python menu_app_recipes.py
 ブラウザで http://localhost:8081 を開く。
-画像未登録時は仮のイラストを表示します。栄養値・価格は未登録です。
+画像未登録時は仮のイラストを表示します。栄養値・価格・検索タグは添付資料の記載に基づきます。
 画像とURLはRECIPESで管理します。未登録のままでも起動できます。
 筋トレおかず候補の資料に載っている11品だけを登録しています。
 例: imageを images/chicken_keema.jpg にすると、その画像を使用します。
@@ -69,168 +69,245 @@ MENUS = [{'id': 5,
   'name': 'たんぱくぱくドン',
   'tag': '資料の筋トレおかず候補',
   'category': 'muscle',
-  'kcal': None,
-  'protein': None,
+  'kcal': 564.0,
+  'protein': 37.7,
   'carbs': None,
-  'fat': None,
+  'fat': 18.6,
   'cost_est': None,
   'color': '#d4a06a',
   'background': '#f0e8dc',
   'image': None,
   'recipe_ids': ['protein_rice_bowl'],
-  'cover_recipe_id': 'protein_rice_bowl'},
+  'cover_recipe_id': 'protein_rice_bowl',
+  'tags': [],
+  'salt': 1.3,
+  'salt_label': '塩分',
+  'vegetables': 0.0},
  {'id': 6,
   'name': 'キャベツと鶏むね肉のドレッシング炒め',
   'tag': '資料の筋トレおかず候補',
   'category': 'muscle',
-  'kcal': None,
-  'protein': None,
-  'carbs': None,
-  'fat': None,
+  'kcal': 297.0,
+  'protein': 28.8,
+  'carbs': 9.2,
+  'fat': 15.8,
   'cost_est': None,
   'color': '#d4a06a',
   'background': '#f0e8dc',
   'image': None,
   'recipe_ids': ['chicken_dressing'],
-  'cover_recipe_id': 'chicken_dressing'},
+  'cover_recipe_id': 'chicken_dressing',
+  'tags': ['キャベツ', '鶏むね肉'],
+  'salt': 0.9,
+  'salt_label': '食塩相当量',
+  'vegetables': 101.0},
  {'id': 7,
   'name': '鶏ひき肉のキーマカレー',
   'tag': '資料の筋トレおかず候補',
   'category': 'muscle',
-  'kcal': None,
-  'protein': None,
-  'carbs': None,
-  'fat': None,
+  'kcal': 602.0,
+  'protein': 21.8,
+  'carbs': 97.4,
+  'fat': 16.8,
   'cost_est': None,
   'color': '#d4a06a',
   'background': '#f0e8dc',
   'image': None,
   'recipe_ids': ['chicken_keema'],
-  'cover_recipe_id': 'chicken_keema'},
+  'cover_recipe_id': 'chicken_keema',
+  'tags': ['ひき肉', '玉ねぎ'],
+  'sodium': 883.0,
+  'salt': 2.2,
+  'salt_label': '食塩相当量'},
  {'id': 8,
   'name': 'キャベツと鶏もも肉のガーリックマヨネーズ炒め',
   'tag': '資料の筋トレおかず候補',
   'category': 'muscle',
-  'kcal': None,
-  'protein': None,
-  'carbs': None,
-  'fat': None,
+  'kcal': 418.0,
+  'protein': 23.6,
+  'carbs': 9.7,
+  'fat': 31.0,
   'cost_est': None,
   'color': '#d4a06a',
   'background': '#f0e8dc',
   'image': None,
   'recipe_ids': ['chicken_garlic_mayo'],
-  'cover_recipe_id': 'chicken_garlic_mayo'},
+  'cover_recipe_id': 'chicken_garlic_mayo',
+  'tags': ['キャベツ', '鶏もも肉'],
+  'salt': 1.8,
+  'salt_label': '食塩相当量',
+  'vegetables': 120.0},
  {'id': 9,
   'name': 'ドレッシングで！さばの深煎りごま煮',
   'tag': '資料の筋トレおかず候補',
   'category': 'muscle',
-  'kcal': None,
-  'protein': None,
-  'carbs': None,
-  'fat': None,
+  'kcal': 303.0,
+  'protein': 17.5,
+  'carbs': 5.3,
+  'fat': 22.5,
   'cost_est': None,
   'color': '#d4a06a',
   'background': '#f0e8dc',
   'image': None,
   'recipe_ids': ['mackerel_sesame'],
-  'cover_recipe_id': 'mackerel_sesame'},
+  'cover_recipe_id': 'mackerel_sesame',
+  'tags': ['さば'],
+  'salt': 1.0,
+  'salt_label': '食塩相当量',
+  'vegetables': 20.0},
  {'id': 10,
   'name': 'ピーマン・玉ねぎ・豚こま肉の炒め物',
   'tag': '資料の節約おかず候補',
   'category': 'saving',
-  'kcal': None,
-  'protein': None,
+  'kcal': 168.0,
+  'protein': 11.8,
   'carbs': None,
-  'fat': None,
+  'fat': 11.4,
   'cost_est': None,
   'color': '#8a9a86',
   'background': '#e8ece6',
   'image': None,
   'recipe_ids': ['pork_pepper_onion'],
-  'cover_recipe_id': 'pork_pepper_onion'},
+  'cover_recipe_id': 'pork_pepper_onion',
+  'tags': ['ピーマン', '玉ねぎ', '豚肉'],
+  'salt': 1.3,
+  'salt_label': '塩分',
+  'vegetables': 69.0},
  {'id': 11,
   'name': '鶏むね肉とブロッコリーのマヨネーズ炒め',
   'tag': '資料の節約おかず候補',
   'category': 'saving',
-  'kcal': None,
-  'protein': None,
+  'kcal': 396.0,
+  'protein': 36.0,
   'carbs': None,
-  'fat': None,
-  'cost_est': None,
+  'fat': 24.1,
+  'cost_est': '約173円（資料のAI推定）',
   'color': '#8a9a86',
   'background': '#e8ece6',
   'image': None,
   'recipe_ids': ['chicken_broccoli_mayo'],
-  'cover_recipe_id': 'chicken_broccoli_mayo'},
+  'cover_recipe_id': 'chicken_broccoli_mayo',
+  'tags': ['鶏肉', 'ブロッコリー', '鶏むね肉'],
+  'salt': 1.6,
+  'salt_label': '塩分',
+  'vegetables': 65.0},
  {'id': 12,
   'name': '春キャベツと焼きのりのちぎりサラダ',
   'tag': '資料の節約おかず候補',
   'category': 'saving',
-  'kcal': None,
-  'protein': None,
+  'kcal': 61.0,
+  'protein': 1.6,
   'carbs': None,
-  'fat': None,
+  'fat': 4.5,
   'cost_est': None,
   'color': '#8a9a86',
   'background': '#e8ece6',
   'image': None,
   'recipe_ids': ['cabbage_nori_salad'],
-  'cover_recipe_id': 'cabbage_nori_salad'},
+  'cover_recipe_id': 'cabbage_nori_salad',
+  'tags': ['キャベツ'],
+  'salt': 0.3,
+  'salt_label': '塩分',
+  'vegetables': 75.0},
  {'id': 13,
   'name': '丸ごと！こんにゃくステーキ',
   'tag': '資料の節約おかず候補',
   'category': 'saving',
-  'kcal': None,
-  'protein': None,
+  'kcal': 114.0,
+  'protein': 1.9,
   'carbs': None,
-  'fat': None,
-  'cost_est': None,
+  'fat': 8.3,
+  'cost_est': '約155円（資料のAI推定）',
   'color': '#8a9a86',
   'background': '#e8ece6',
   'image': None,
   'recipe_ids': ['konjac_steak'],
-  'cover_recipe_id': 'konjac_steak'},
+  'cover_recipe_id': 'konjac_steak',
+  'tags': ['こんにゃく'],
+  'salt': 3.1,
+  'salt_label': '塩分',
+  'fat_unit_missing': True},
  {'id': 14,
   'name': 'なんちゃってうなぎの蒲焼丼',
   'tag': '資料の節約おかず候補',
   'category': 'saving',
-  'kcal': None,
-  'protein': None,
+  'kcal': 526.0,
+  'protein': 16.0,
   'carbs': None,
-  'fat': None,
-  'cost_est': None,
+  'fat': 4.4,
+  'cost_est': '約173円（資料のAI推定）',
   'color': '#8a9a86',
   'background': '#e8ece6',
   'image': None,
   'recipe_ids': ['mock_eel_bowl'],
-  'cover_recipe_id': 'mock_eel_bowl'},
+  'cover_recipe_id': 'mock_eel_bowl',
+  'tags': ['ちくわ'],
+  'salt': 4.7,
+  'salt_label': '塩分'},
  {'id': 15,
   'name': '鶏胸肉のうま酢煮',
   'tag': '資料の節約おかず候補',
   'category': 'saving',
-  'kcal': None,
-  'protein': None,
+  'kcal': 408.0,
+  'protein': 35.8,
   'carbs': None,
-  'fat': None,
+  'fat': 16.2,
   'cost_est': None,
   'color': '#8a9a86',
   'background': '#e8ece6',
   'image': None,
   'recipe_ids': ['chicken_vinegar'],
-  'cover_recipe_id': 'chicken_vinegar'}]
+  'cover_recipe_id': 'chicken_vinegar',
+  'tags': [],
+  'salt': 2.7,
+  'salt_label': '塩分',
+  'vegetables': 120.0}]
+
+
+NUTRITION_FIELDS = [
+    ('エネルギー', 'kcal', 'kcal'),
+    ('タンパク質', 'protein', 'g'),
+    ('脂質', 'fat', 'g'),
+    ('炭水化物', 'carbs', 'g'),
+    ('塩分・食塩相当量', 'salt', 'g'),
+    ('野菜摂取量', 'vegetables', 'g'),
+    ('ナトリウム', 'sodium', 'mg'),
+]
+
+
+def nutrient_text(menu, key, unit):
+    value = menu.get(key)
+    if value is None:
+        return '資料に記載なし'
+    suffix = '（単位は資料に記載なし）' if menu.get(key + '_unit_missing') else f' {unit}'
+    return f'{value:g}{suffix}'
 
 
 def nutrition_summary(menu):
-    """資料にない栄養値を推測しない。"""
-    if menu.get("kcal") is None:
-        return "栄養値は未登録"
-    return (f"{menu['kcal']} kcal / タンパク質 {menu['protein']} g / "
-            f"脂質 {menu['fat']} g")
+    return ' / '.join(
+        f'{label} {nutrient_text(menu, key, unit)}'
+        for label, key, unit in NUTRITION_FIELDS[:3]
+    )
 
 
 def cost_summary(menu):
-    return f"目安: {menu['cost_est']}" if menu.get("cost_est") else "価格は未登録"
+    return f"推定材料費: {menu['cost_est']}" if menu.get('cost_est') else '価格は資料に記載なし'
+
+
+def show_nutrition(menu):
+    with ui.column().classes('w-full gap-1'):
+        for label, key, unit in NUTRITION_FIELDS:
+            with ui.row().classes('w-full justify-between text-sm'):
+                ui.label(menu.get('salt_label', label) if key == 'salt' else label)
+                ui.label(nutrient_text(menu, key, unit)).classes('font-bold')
+        ui.label('栄養値は資料の記載値です。分量の基準はリンク先のレシピで確認できます。').classes('muted text-xs mt-2')
+
+
+def filter_menus(category='all', tags=None):
+    required = set(tags or [])
+    return [menu for menu in MENUS
+            if (category == 'all' or menu['category'] == category)
+            and required.issubset(menu.get('tags', []))]
 
 
 def image_source(image):
@@ -330,7 +407,7 @@ def meal_image(menu):
 def main_page():
     # 選んだ献立と、表示するカテゴリーを管理
     selected = {"menu": None}
-    filter_state = {"category": "all"}
+    filter_state = {"category": "all", "tags": []}
     autoplay_state = {"enabled": True}
     ui.colors(primary="#39705a")
     ui.add_css('''
@@ -493,32 +570,7 @@ def main_page():
                         else:
                             ui.label("レシピURLは未登録です" if not url else "URLはhttps://から入力してください").classes("muted text-xs")
                 ui.separator()
-                for label, key, target, color in [
-                    ("タンパク質", "protein", 40, "#39705a"),
-                    ("炭水化物", "carbs", 80, "#d6ab61"),
-                    ("脂質", "fat", 20, "#a789aa"),
-                ]:
-                    amount = menu.get(key)
-                    if amount is None:
-                        with ui.row().classes("w-full justify-between text-xs"):
-                            ui.label(label)
-                            ui.label("未登録").classes("muted")
-                        continue
-                    with ui.row().classes(
-                        "w-full justify-between text-xs"
-                    ):
-                        ui.label(label)
-                        ui.label(
-                            f"{amount} / {target} g"
-                        ).classes("font-bold")
-                    ui.linear_progress(
-                        value=min(amount / target, 1),
-                        color=color,
-                        show_value=False,
-                    ).props("rounded size=8px")
-                ui.label(
-                    "栄養値・価格は未登録です。バーの基準は表示用のサンプルです。"
-                ).classes("muted text-xs")
+                show_nutrition(menu)
             else:
                 ui.label("未選択").classes(
                     "text-lg font-bold text-gray-400"
@@ -531,14 +583,7 @@ def main_page():
     def main_content():
         """カテゴリーに合う献立のスライドと詳細を表示します。"""
         cat = filter_state["category"]
-        if cat == "all":
-            filtered_menus = MENUS
-        else:
-            filtered_menus = [
-                menu
-                for menu in MENUS
-                if menu["category"] == cat
-            ]
+        filtered_menus = filter_menus(cat, filter_state['tags'])
         def set_filter(category):
             filter_state["category"] = category
             set_fire(category == 'muscle')
@@ -571,9 +616,10 @@ def main_page():
             ).classes(
                 "rounded-2xl text-lg px-8 py-3 font-bold shadow-sm"
             )
+        ui.label(f'{len(filtered_menus)}件の料理').classes('muted text-sm')
         if not filtered_menus:
             ui.label(
-                "該当する献立がありません"
+                "該当する献立がありません。タグを減らすか、カテゴリーを変更してください。"
             ).classes("muted p-4")
             return
         with ui.element("div").classes("layout"):
@@ -651,11 +697,12 @@ def main_page():
                                     "bg-gray-100 rounded-lg "
                                     "px-2.5 py-1 text-xs text-gray-700"
                                 )
-                        ui.label(
-                            nutrition_summary(menu)
-                        ).classes(
-                            "muted text-xs font-bold mt-1"
-                        )
+                        with ui.row().classes('gap-2 flex-wrap'):
+                            for tag in menu.get('tags', []):
+                                ui.label('#' + tag).classes('text-xs bg-green-50 text-green-800 rounded-full px-3 py-1')
+                            if not menu.get('tags'):
+                                ui.label('資料に検索タグの記載なし').classes('muted text-xs')
+                        show_nutrition(menu)
                         ui.button(
                             "この献立にする",
                             icon="check",
@@ -684,6 +731,17 @@ def main_page():
             ui.label(
                 "目的別献立セレクター"
             ).classes("muted text-xs")
+        def search_by_tags(event):
+            filter_state['tags'] = list(event.value or [])
+            main_content.refresh()
+
+        ui.select(
+            options=sorted({tag for menu in MENUS for tag in menu.get('tags', [])}),
+            label='食材タグで検索',
+            value=[], multiple=True, with_input=True,
+            on_change=search_by_tags,
+        ).props('outlined use-chips clearable').classes('w-full')
+        ui.label('食材名を入力して候補を選択。複数選ぶと、すべてのタグを含む料理に絞ります。×で解除できます。').classes('muted text-xs')
         main_content()
 if __name__ == "__main__":
     ui.run(
