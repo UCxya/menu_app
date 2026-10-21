@@ -187,7 +187,7 @@ MENUS = [{'id': 5,
   'image': None,
   'recipe_ids': ['chicken_broccoli_mayo'],
   'cover_recipe_id': 'chicken_broccoli_mayo',
-  'tags': ['鶏肉', 'ブロッコリー', '鶏むね肉'],
+  'tags': ['ブロッコリー', '鶏むね肉'],
   'salt': 1.6,
   'salt_label': '塩分',
   'vegetables': 65.0},
@@ -258,7 +258,7 @@ MENUS = [{'id': 5,
   'image': None,
   'recipe_ids': ['chicken_vinegar'],
   'cover_recipe_id': 'chicken_vinegar',
-  'tags': [],
+  'tags': ['鶏むね肉'],
   'salt': 2.7,
   'salt_label': '塩分',
   'vegetables': 120.0}]
@@ -272,7 +272,6 @@ MEAL_TARGETS = {
 NUTRITION_FIELDS = [
     ('タンパク質', 'protein', 'g'),
     ('脂質', 'fat', 'g'),
-    ('炭水化物', 'carbs', 'g'),
     ('食塩相当量', 'salt', 'g'),
 ]
 
@@ -328,6 +327,26 @@ def show_nutrition(menu, reference='male'):
                 ui.label(remaining).classes('muted text-xs')
         ui.label('食塩は少なめに抑える項目です。100%を目指す必要はありません。').classes('muted text-xs')
         ui.label('この料理の記載量を1食の目安と比較しています。ほかに食べるご飯や副菜は含みません。資料の分量はレシピで確認してください。').classes('muted text-xs')
+
+
+# 検索候補の表示順。使いたい食材をこのリストの上に移動できます。
+# 利用統計ではなく、このアプリでの表示優先度です。
+TAG_PRIORITY = [
+    '鶏むね肉', '鶏むね', '鶏もも肉', 'ひき肉', '豚肉',
+    '玉ねぎ', 'キャベツ', 'ブロッコリー', 'ピーマン',
+    'ちくわ', 'こんにゃく', 'さば',
+]
+
+
+def tag_search_options():
+    # 件数は全カテゴリーの料理数。重複したタグは1料理につき1回だけ数えます。
+    counts = {}
+    for menu in MENUS:
+        for tag in set(menu.get('tags', [])):
+            counts[tag] = counts.get(tag, 0) + 1
+    priority = {tag: index for index, tag in enumerate(TAG_PRIORITY)}
+    tags = sorted(counts, key=lambda tag: (priority.get(tag, len(priority)), tag))
+    return {tag: f'{tag}（{counts[tag]}品）' for tag in tags}
 
 
 def filter_menus(category='all', tags=None):
@@ -778,12 +797,12 @@ def main_page():
             main_content.refresh()
 
         tag_select = ui.select(
-            options=sorted({tag for menu in MENUS for tag in menu.get('tags', [])}),
+            options=tag_search_options(),
             label='食材タグで検索',
             value=[], multiple=True, with_input=True,
             on_change=search_by_tags,
         ).props('outlined use-chips clearable').classes('w-full')
-        ui.label('食材名を入力して候補を選択。複数選ぶと、すべてのタグを含む料理に絞ります。×で解除できます。').classes('muted text-xs')
+        ui.label('タグ右の件数は全料理での登録数です。複数選ぶと、すべてのタグを含む料理に絞ります。×で解除できます。').classes('muted text-xs')
         main_content()
 if __name__ == "__main__":
     ui.run(
