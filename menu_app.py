@@ -264,14 +264,16 @@ MENUS = [{'id': 5,
   'vegetables': 120.0}]
 
 
+# ユーザー提示の1食あたりの比較目安。個人別の必要量を判定するものではありません。
+MEAL_TARGETS = {
+    'male': {'label': '男性 18〜29歳', 'protein': 22, 'fat': 24, 'carbs': 140, 'salt': 2.5},
+    'female': {'label': '女性 18〜29歳', 'protein': 17, 'fat': 18, 'carbs': 107, 'salt': 2.1},
+}
 NUTRITION_FIELDS = [
-    ('エネルギー', 'kcal', 'kcal'),
     ('タンパク質', 'protein', 'g'),
     ('脂質', 'fat', 'g'),
     ('炭水化物', 'carbs', 'g'),
-    ('塩分・食塩相当量', 'salt', 'g'),
-    ('野菜摂取量', 'vegetables', 'g'),
-    ('ナトリウム', 'sodium', 'mg'),
+    ('食塩相当量', 'salt', 'g'),
 ]
 
 
@@ -283,24 +285,49 @@ def nutrient_text(menu, key, unit):
     return f'{value:g}{suffix}'
 
 
-def nutrition_summary(menu):
-    return ' / '.join(
-        f'{label} {nutrient_text(menu, key, unit)}'
-        for label, key, unit in NUTRITION_FIELDS[:3]
-    )
-
-
 def cost_summary(menu):
     return f"推定材料費: {menu['cost_est']}" if menu.get('cost_est') else '価格は資料に記載なし'
 
 
-def show_nutrition(menu):
-    with ui.column().classes('w-full gap-1'):
+def nutrient_ratio(menu, key, reference):
+    if menu.get(key) is None or menu.get(key + '_unit_missing'):
+        return None
+    return menu[key] / MEAL_TARGETS[reference][key]
+
+
+def show_nutrition(menu, reference='male'):
+    targets = MEAL_TARGETS[reference]
+    with ui.column().classes('w-full gap-3'):
+        ui.label('1食の目安に対する割合').classes('font-bold text-base')
+        ui.label(targets['label'] + '・3食均等割りの比較目安').classes('muted text-xs')
         for label, key, unit in NUTRITION_FIELDS:
-            with ui.row().classes('w-full justify-between text-sm'):
-                ui.label(menu.get('salt_label', label) if key == 'salt' else label)
-                ui.label(nutrient_text(menu, key, unit)).classes('font-bold')
-        ui.label('栄養値は資料の記載値です。分量の基準はリンク先のレシピで確認できます。').classes('muted text-xs mt-2')
+            target = targets[key]
+            ratio = nutrient_ratio(menu, key, reference)
+            is_salt = key == 'salt'
+            with ui.column().classes('w-full gap-1'):
+                with ui.row().classes('w-full justify-between items-center'):
+                    ui.label(label).classes('font-bold text-sm')
+                    ui.label(nutrient_text(menu, key, unit)).classes('text-sm')
+                if ratio is None:
+                    ui.label('数値または単位が未記載のため計算できません').classes('muted text-xs')
+                    continue
+                if is_salt:
+                    color = '#dc7040' if ratio >= 1 else '#5286a0'
+                    status = f'比較上限の {ratio:.0%}'
+                    limit = f'{target:g} g未満' if reference == 'male' else f'約{target:g} g（比較上限）'
+                    remaining = '比較上限に達しています' if ratio >= 1 else f'比較上限まで {target - menu[key]:.1f} g'
+                else:
+                    color = '#39705a' if ratio <= 1 else '#b57b30'
+                    status = f'目安の {ratio:.0%}'
+                    limit = f'目安 {target:g} g'
+                    remaining = f'目安まで {target - menu[key]:.1f} g' if ratio < 1 else '目安以上'
+                with ui.row().classes('w-full justify-between text-xs'):
+                    ui.label(status).classes('font-bold')
+                    ui.label(limit).classes('muted')
+                ui.linear_progress(value=min(max(ratio, 0), 1), color=color, show_value=False).props('rounded size=12px')
+                ui.label(remaining).classes('muted text-xs')
+        ui.label('食塩は少なめに抑える項目です。100%を目指す必要はありません。').classes('muted text-xs')
+        ui.label('この料理の記載量を1食の目安と比較しています。ほかに食べるご飯や副菜は含みません。資料の分量はレシピで確認してください。').classes('muted text-xs')
 
 
 def filter_menus(category='all', tags=None):
@@ -409,6 +436,7 @@ def main_page():
     selected = {"menu": None}
     filter_state = {"category": "all", "tags": []}
     autoplay_state = {"enabled": True}
+    target_state = {"reference": "male"}
     ui.colors(primary="#39705a")
     ui.add_css('''
         body {
@@ -518,6 +546,10 @@ def main_page():
         else:
             fire_background.classes(remove='is-burning')
 
+    @ui.refreshable
+    def nutrition_panel(menu):
+        show_nutrition(menu, target_state['reference'])
+
     def select_menu(menu):
         """献立を選び、決定した献立のパネルを更新します。"""
         selected["menu"] = menu
@@ -539,7 +571,7 @@ def main_page():
                     "text-xl font-bold text-green-900"
                 )
                 ui.label(
-                    nutrition_summary(menu) + " ・ " + cost_summary(menu)
+                    cost_summary(menu)
                 ).classes(
                     "text-sm font-bold text-amber-800"
                 )
@@ -570,7 +602,7 @@ def main_page():
                         else:
                             ui.label("レシピURLは未登録です" if not url else "URLはhttps://から入力してください").classes("muted text-xs")
                 ui.separator()
-                show_nutrition(menu)
+                nutrition_panel(menu)
             else:
                 ui.label("未選択").classes(
                     "text-lg font-bold text-gray-400"
@@ -702,7 +734,7 @@ def main_page():
                                 ui.label('#' + tag).classes('text-xs bg-green-50 text-green-800 rounded-full px-3 py-1')
                             if not menu.get('tags'):
                                 ui.label('資料に検索タグの記載なし').classes('muted text-xs')
-                        show_nutrition(menu)
+                        nutrition_panel(menu)
                         ui.button(
                             "この献立にする",
                             icon="check",
@@ -731,11 +763,21 @@ def main_page():
             ui.label(
                 "目的別献立セレクター"
             ).classes("muted text-xs")
+        def change_reference(event):
+            target_state['reference'] = event.value
+            nutrition_panel.refresh()
+
+        ui.label('栄養ゲージの比較目安').classes('font-bold text-sm')
+        ui.toggle(
+            {'male': '男性 18〜29歳', 'female': '女性 18〜29歳'},
+            value=target_state['reference'], on_change=change_reference,
+        ).props('no-caps rounded unelevated')
         def search_by_tags(event):
             filter_state['tags'] = list(event.value or [])
+            tag_select.run_method('hidePopup')
             main_content.refresh()
 
-        ui.select(
+        tag_select = ui.select(
             options=sorted({tag for menu in MENUS for tag in menu.get('tags', [])}),
             label='食材タグで検索',
             value=[], multiple=True, with_input=True,
