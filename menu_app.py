@@ -29,7 +29,7 @@ RECIPES = {'protein_rice_bowl': {'name': 'たんぱくぱくドン',
                    'url': 'https://www.sbfoods.co.jp/recipe/detail/10317.html',
                    'source': 'エスビー食品公式'},
  'chicken_garlic_mayo': {'name': 'キャベツと鶏もも肉のガーリックマヨネーズ炒め',
-                         'image': None,
+                         'image': 'kyabetutorimune.png',
                          'url': 'https://www.kewpie.co.jp/recipes/recipe/QP00012673/',
                          'source': 'キユーピー公式'},
  'mackerel_sesame': {'name': 'ドレッシングで！さばの深煎りごま煮',
@@ -37,27 +37,27 @@ RECIPES = {'protein_rice_bowl': {'name': 'たんぱくぱくドン',
                      'url': 'https://www.kewpie.co.jp/recipes/recipe/QP10004933/',
                      'source': 'キユーピー公式'},
  'pork_pepper_onion': {'name': 'ピーマン・玉ねぎ・豚こま肉の炒め物',
-                       'image': None,
+                       'image': 'pi-man',
                        'url': 'https://park.ajinomoto.co.jp/recipe/card/805819/',
                        'source': '味の素パーク公式'},
  'chicken_broccoli_mayo': {'name': '鶏むね肉とブロッコリーのマヨネーズ炒め',
-                           'image': None,
+                           'image': 'burokkori-.jpg',
                            'url': 'https://park.ajinomoto.co.jp/recipe/card/803248/',
                            'source': '味の素パーク公式'},
  'cabbage_nori_salad': {'name': '春キャベツと焼きのりのちぎりサラダ',
-                        'image': None,
+                        'image': 'retasu.jpg',
                         'url': 'https://park.ajinomoto.co.jp/recipe/card/803142/',
                         'source': '味の素パーク公式'},
  'konjac_steak': {'name': '丸ごと！こんにゃくステーキ',
-                  'image': None,
+                  'image': 'konnyaku.jpg',
                   'url': 'https://park.ajinomoto.co.jp/recipe/card/803241/',
                   'source': '味の素パーク公式'},
  'mock_eel_bowl': {'name': 'なんちゃってうなぎの蒲焼丼',
-                   'image': None,
+                   'image': 'unagi.png',
                    'url': 'https://park.ajinomoto.co.jp/recipe/card/708973/',
                    'source': '味の素パーク公式'},
  'chicken_vinegar': {'name': '鶏胸肉のうま酢煮',
-                     'image': None,
+                     'image': 'umasu.png',
                      'url': 'https://park.ajinomoto.co.jp/recipe/card/708962/',
                      'source': '味の素パーク公式'}}
 
@@ -444,7 +444,6 @@ def main_page():
     def select_menu(menu):
         """献立を選び、決定した献立のパネルを更新します。"""
         selected["menu"] = menu
-        set_fire(menu['category'] == 'muscle')
         selection.refresh()
         ui.notify(
             f"{menu['name']}を決定しました！",
@@ -482,6 +481,7 @@ def main_page():
                                     ui.image(source).classes("w-full rounded-lg").props("height=140px fit=cover")
                             else:
                                 ui.image(source).classes("w-full rounded-lg").props("height=140px fit=cover")
+                            ui.label("画像はイメージです").classes("muted text-xs")
                         else:
                             ui.label("画像は未登録、またはファイルが見つかりません").classes("muted text-xs")
                         if valid_url:
@@ -597,6 +597,7 @@ def main_page():
                             ).props(
                                 "fit=cover no-spinner"
                             )
+                ui.label("画像はイメージです").classes("muted text-xs")
                 def set_autoplay(event):
                     autoplay_state["enabled"] = event.value
                     if event.value:
