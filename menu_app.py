@@ -8,6 +8,9 @@
 例: imageを images/chicken_keema.jpg にすると、その画像を使用します。
 """
 import base64
+import json
+from datetime import date, datetime, timedelta, timezone
+from uuid import uuid4
 from pathlib import Path
 from nicegui import ui
 # ===== 編集する場所1：料理ごとの画像とレシピURL =====
@@ -81,7 +84,7 @@ RECIPES = {'protein_rice_bowl': {'name': 'たんぱくぱくドン',
            'url': 'https://park.ajinomoto.co.jp/recipe/card/707175/',
            'source': '味の素パーク公式'},
  'pork_vegetable_stir_fry': {'name': '肉野菜炒め',
-                             'image': 'yasaiitame.png',
+                             'image': 'nikuyasai.png',
                              'url': 'https://park.ajinomoto.co.jp/recipe/card/706807/',
                              'source': '味の素パーク公式'},
  'tonjiru': {'name': '豚汁',
@@ -841,10 +844,50 @@ def meal_image(menu):
     '''
     encoded = base64.b64encode(svg.encode()).decode()
     return "data:image/svg+xml;base64," + encoded
+HISTORY_KEY = 'menu_days_meal_history_v1'
+MEAL_TIMES = ['朝食', '昼食', '夕食', '間食']
+
+
+def today_japan():
+    return datetime.now(timezone(timedelta(hours=9))).date().isoformat()
+
+
+def history_script(action='read', payload=None):
+    """読み取りと変更をブラウザ内で一度に実行し、別タブの記録を上書きしない。"""
+    return """(() => {
+        const key = __KEY__;
+        const action = __ACTION__;
+        const payload = __PAYLOAD__;
+        const raw = localStorage.getItem(key);
+        let records = raw === null ? [] : JSON.parse(raw);
+        if (!Array.isArray(records) || records.some(r => !r ||
+            typeof r.id !== 'string' || typeof r.date !== 'string' ||
+            typeof r.meal_time !== 'string' || typeof r.name !== 'string')) {
+            throw new Error('Invalid meal history');
+        }
+        let duplicate = false;
+        if (action === 'add') {
+            duplicate = records.some(r => r.date === payload.date &&
+                r.meal_time === payload.meal_time && r.menu_id === payload.menu_id);
+            if (!duplicate) {
+                records.push(payload);
+                localStorage.setItem(key, JSON.stringify(records));
+            }
+        } else if (action === 'delete') {
+            records = records.filter(r => r.id !== payload);
+            localStorage.setItem(key, JSON.stringify(records));
+        }
+        return {records, duplicate};
+    })()""".replace('__KEY__', json.dumps(HISTORY_KEY)).replace(
+        '__ACTION__', json.dumps(action)).replace('__PAYLOAD__', json.dumps(payload, ensure_ascii=True))
+
+
 @ui.page("/")
 def main_page():
     # 選んだ献立と、表示するカテゴリーを管理
     selected = {"menu": None}
+    history_state = {"records": [], "loaded": False, "error": False, "date": ""}
+    page_client = ui.context.client
     filter_state = {"category": "all", "tags": []}
     autoplay_state = {"enabled": True}
     target_state = {"reference": "male"}
@@ -961,6 +1004,108 @@ def main_page():
     def nutrition_panel(menu):
         show_nutrition(menu, target_state['reference'])
 
+    async def update_history(action='read', payload=None):
+        try:
+            await page_client.connected(timeout=10)
+            result = await ui.run_javascript(history_script(action, payload), timeout=10)
+            history_state.update(records=result['records'], loaded=True, error=False)
+            history_panel.refresh()
+            return result
+        except Exception:
+            history_state['error'] = True
+            history_panel.refresh()
+            ui.notify('履歴を読み書きできません。ブラウザの保存設定や接続を確認してください。', type='negative')
+            return None
+
+    def open_record_dialog(menu):
+        with ui.dialog() as dialog, ui.card().classes('w-full max-w-md gap-3'):
+            ui.label('食べた記録を追加').classes('text-lg font-bold')
+            ui.label(menu['name']).classes('font-bold')
+            eaten_date = ui.input('食べた日', value=today_japan()).props('type=date').classes('w-full')
+            meal_time = ui.select(MEAL_TIMES, label='食事の区分', value='夕食').classes('w-full')
+            ui.label('レシピ記載の分量を1回分として記録します。').classes('muted text-xs')
+
+            async def save_record():
+                try:
+                    day = date.fromisoformat(eaten_date.value or '')
+                    if day > date.fromisoformat(today_japan()):
+                        raise ValueError
+                    if meal_time.value not in MEAL_TIMES:
+                        raise ValueError
+                except (ValueError, TypeError):
+                    ui.notify('今日以前の正しい日付と食事の区分を選んでください。', type='warning')
+                    return
+                save_button.disable()
+                # 名前と栄養値は登録時点の値を残す。
+                record = {
+                    'id': str(uuid4()), 'date': day.isoformat(), 'meal_time': meal_time.value,
+                    'menu_id': menu['id'], 'name': menu['name'],
+                    'kcal': menu.get('kcal'), 'protein': menu.get('protein'),
+                    'fat': menu.get('fat'), 'salt': menu.get('salt'),
+                    'fat_unit_missing': menu.get('fat_unit_missing', False),
+                    'cost_est': menu.get('cost_est'),
+                }
+                result = await update_history('add', record)
+                save_button.enable()
+                if result is not None:
+                    dialog.close()
+                    if result['duplicate']:
+                        ui.notify('同じ日・食事区分にこの料理は記録済みです。', type='info')
+                    else:
+                        ui.notify('食事履歴に保存しました。', type='positive')
+
+            with ui.row().classes('w-full justify-end'):
+                ui.button('キャンセル', on_click=dialog.close).props('flat')
+                save_button = ui.button('履歴に保存', icon='save', on_click=save_record)
+        dialog.open()
+
+    def confirm_delete(record):
+        with ui.dialog() as dialog, ui.card().classes('gap-3'):
+            ui.label('この記録を削除しますか？').classes('font-bold')
+            ui.label(f"{record['date']}・{record['meal_time']}：{record['name']}")
+            async def delete_record():
+                delete_button.disable()
+                result = await update_history('delete', record['id'])
+                delete_button.enable()
+                if result is not None:
+                    dialog.close()
+                    ui.notify('記録を削除しました。')
+            with ui.row().classes('justify-end w-full'):
+                ui.button('キャンセル', on_click=dialog.close).props('flat')
+                delete_button = ui.button('削除する', color='negative', on_click=delete_record)
+        dialog.open()
+
+    @ui.refreshable
+    def history_panel():
+        if history_state['error']:
+            ui.label('履歴を取得できませんでした。保存済みのデータは消していません。更新を押して再試行してください。').classes('text-red-700 text-sm')
+            return
+        if not history_state['loaded']:
+            ui.label('履歴を読み込んでいます…').classes('muted text-sm')
+            return
+        records = [r for r in history_state['records']
+                   if not history_state['date'] or r['date'] == history_state['date']]
+        records.sort(key=lambda r: (r['date'], MEAL_TIMES.index(r['meal_time'])
+                                   if r['meal_time'] in MEAL_TIMES else -1), reverse=True)
+        ui.label(f'{len(records)}件の記録').classes('muted text-sm')
+        if not records:
+            ui.label('まだ記録がありません。献立を選んで「食べた記録を追加」から保存できます。').classes('muted text-sm')
+            return
+        previous_day = None
+        for record in records:
+            if record['date'] != previous_day:
+                ui.label(record['date']).classes('text-lg font-bold mt-3')
+                previous_day = record['date']
+            with ui.card().classes('w-full shadow-none border rounded-xl gap-2'):
+                with ui.row().classes('w-full items-center justify-between'):
+                    ui.label(record['meal_time']).classes('text-sm text-green-800 font-bold')
+                    ui.button(icon='delete_outline', on_click=lambda r=record: confirm_delete(r)).props('flat round aria-label=記録を削除')
+                ui.label(record['name']).classes('font-bold')
+                for label, key, unit in NUTRITION_FIELDS:
+                    ui.label(f'{label}：{nutrient_text(record, key, unit)}').classes('text-xs')
+                if target_state['reference'] == 'female_diet':
+                    ui.label('エネルギー：' + nutrient_text(record, 'kcal', 'kcal')).classes('text-xs font-bold text-amber-900')
+
     def select_menu(menu):
         """献立を選び、決定した献立のパネルを更新します。"""
         selected["menu"] = menu
@@ -987,6 +1132,7 @@ def main_page():
                     "text-sm font-bold text-amber-800"
                 )
                 ui.separator()
+                ui.button('食べた記録を追加', icon='history', on_click=lambda: open_record_dialog(menu)).props('unelevated').classes('w-full rounded-xl')
                 # 料理ごとに、その料理の画像とリンクを表示します。
                 ui.label("料理ごとのレシピ").classes("text-base font-bold")
                 for recipe in menu_recipes(menu):
@@ -1187,6 +1333,7 @@ def main_page():
             was_diet = target_state['reference'] == 'female_diet'
             target_state['reference'] = event.value
             is_diet = event.value == 'female_diet'
+            history_panel.refresh()
             if was_diet != is_diet:
                 main_content.refresh()
             else:
@@ -1235,6 +1382,19 @@ def main_page():
                             ).classes('rounded-full')
         ingredient_search()
         main_content()
+        with ui.card().classes('panel w-full gap-3'):
+            with ui.row().classes('w-full justify-between items-center'):
+                ui.label('食事履歴').classes('text-xl font-bold')
+                ui.button('更新', icon='refresh', on_click=lambda: update_history()).props('flat')
+            ui.label('このブラウザ・同じURLに保存します。別の端末やURLとは共有されず、ブラウザのサイトデータを消すと履歴も消えます。').classes('muted text-xs')
+            def filter_history(event):
+                history_state['date'] = event.value or ''
+                history_panel.refresh()
+            with ui.row().classes('items-center w-full'):
+                history_date = ui.input('日付で絞り込み', on_change=filter_history).props('type=date clearable')
+                ui.button('全期間', on_click=lambda: history_date.set_value('')).props('flat')
+            history_panel()
+        ui.timer(0.2, update_history, once=True)
 if __name__ == "__main__":
     ui.run(
         title="MENU DAYS | 献立とレシピリンク",
