@@ -620,6 +620,7 @@ MENUS = [{'id': 5,
 MEAL_TARGETS = {
     'male': {'label': '男性 18〜29歳', 'protein': 22, 'fat': 24, 'carbs': 140, 'salt': 2.5},
     'female': {'label': '女性 18〜29歳', 'protein': 17, 'fat': 18, 'carbs': 107, 'salt': 2.1},
+    'female_diet': {'label': '女性用ダイエットモード', 'protein': 17, 'fat': 18, 'salt': 2.1},
 }
 NUTRITION_FIELDS = [
     ('タンパク質', 'protein', 'g'),
@@ -649,6 +650,11 @@ def nutrient_ratio(menu, key, reference):
 def show_nutrition(menu, reference='male'):
     targets = MEAL_TARGETS[reference]
     with ui.column().classes('w-full gap-3'):
+        if reference == 'female_diet':
+            with ui.column().classes('w-full rounded-xl bg-amber-50 p-3 gap-1'):
+                ui.label('この料理のエネルギー').classes('text-xs text-amber-900')
+                ui.label(nutrient_text(menu, 'kcal', 'kcal')).classes('text-2xl font-bold text-amber-900')
+                ui.label('参考：以前に指定した女性の1食の目安は約650 kcal。減量用の目標値ではありません。').classes('text-xs text-amber-900')
         ui.label('1食の目安に対する割合').classes('font-bold text-base')
         ui.label(targets['label'] + '・3食均等割りの比較目安').classes('muted text-xs')
         for label, key, unit in NUTRITION_FIELDS:
@@ -703,11 +709,43 @@ def tag_search_options():
     return {tag: f'{tag}（{counts[tag]}品）' for tag in tags}
 
 
-def filter_menus(category='all', tags=None):
+INGREDIENT_GROUPS = {
+    '肉類': ['鶏むね肉', '鶏むね', '鶏もも肉', '鶏肉', 'ひき肉', '豚肉', '牛肉'],
+    '野菜類': ['玉ねぎ', 'キャベツ', 'ブロッコリー', 'ピーマン', 'にんじん', 'じゃがいも', '大根'],
+    '麺類': ['パスタ', 'うどん', '焼きそば麺'],
+    '魚類': ['さば', '鮭', 'かつお', 'ちくわ'],
+    'その他': ['卵', '牛乳', 'バター', 'こんにゃく'],
+}
+
+
+def grouped_tag_options():
+    """全タグを一つの分類に割り当てる。未分類の新しいタグはその他へ。"""
+    options = tag_search_options()
+    grouped = {group: {} for group in INGREDIENT_GROUPS}
+    assigned = set()
+    for group, tags in INGREDIENT_GROUPS.items():
+        for tag in tags:
+            if tag in options and tag not in assigned:
+                grouped[group][tag] = options[tag]
+                assigned.add(tag)
+    for tag, label in options.items():
+        if tag not in assigned:
+            grouped['その他'][tag] = label
+    return grouped
+
+
+def filter_menus(category='all', tags=None, *, diet=False):
     required = set(tags or [])
-    return [menu for menu in MENUS
-            if (category == 'all' or menu['category'] == category)
-            and required.issubset(menu.get('tags', []))]
+    result = [menu for menu in MENUS
+              if (category == 'all' or menu['category'] == category)
+              and required.issubset(menu.get('tags', []))]
+    if diet:
+        # 記載量あたりのカロリーで並べ替え。未記載・単位不明は末尾。
+        result.sort(key=lambda menu: menu['kcal']
+                    if menu.get('kcal') is not None and not menu.get('kcal_unit_missing')
+                    else float('inf'))
+    return result
+
 
 
 def image_source(image):
@@ -988,7 +1026,7 @@ def main_page():
     def main_content():
         """カテゴリーに合う献立のスライドと詳細を表示します。"""
         cat = filter_state["category"]
-        filtered_menus = filter_menus(cat, filter_state['tags'])
+        filtered_menus = filter_menus(cat, filter_state['tags'], diet=target_state['reference'] == 'female_diet')
         def set_filter(category):
             filter_state["category"] = category
             set_fire(category == 'muscle')
@@ -1027,6 +1065,9 @@ def main_page():
             ).props(
                 "unelevated" if cat == "standard" else "outline"
             ).classes("rounded-2xl text-lg px-8 py-3 font-bold shadow-sm")
+        if target_state['reference'] == 'female_diet':
+            ui.label('女性用ダイエットモード：カロリーが低い順').classes('font-bold text-amber-900')
+            ui.label('料理ごとの記載量で比較しています。少ないカロリーだけで1食を選ばず、主食・主菜・副菜を組み合わせてください。').classes('muted text-xs')
         ui.label(f'{len(filtered_menus)}件の料理').classes('muted text-sm')
         if not filtered_menus:
             ui.label(
@@ -1143,26 +1184,56 @@ def main_page():
                 "目的別献立セレクター"
             ).classes("muted text-xs")
         def change_reference(event):
+            was_diet = target_state['reference'] == 'female_diet'
             target_state['reference'] = event.value
-            nutrition_panel.refresh()
+            is_diet = event.value == 'female_diet'
+            if was_diet != is_diet:
+                main_content.refresh()
+            else:
+                nutrition_panel.refresh()
 
-        ui.label('栄養ゲージの比較目安').classes('font-bold text-sm')
+        ui.label('栄養ゲージの比較目安・モード').classes('font-bold text-sm')
         ui.toggle(
-            {'male': '男性 18〜29歳', 'female': '女性 18〜29歳'},
+            {'male': '男性 18〜29歳', 'female': '女性 18〜29歳',
+             'female_diet': '女性用ダイエットモード'},
             value=target_state['reference'], on_change=change_reference,
-        ).props('no-caps rounded unelevated')
-        def search_by_tags(event):
-            filter_state['tags'] = list(event.value or [])
-            tag_select.run_method('hidePopup')
+        ).props('no-caps rounded unelevated').classes('flex-wrap')
+
+        def toggle_tag(tag):
+            if tag in filter_state['tags']:
+                filter_state['tags'].remove(tag)
+            else:
+                filter_state['tags'].append(tag)
+            # 再描画で食材一覧を閉じ、選んだタグと検索結果を表示。
+            ingredient_search.refresh()
             main_content.refresh()
 
-        tag_select = ui.select(
-            options=tag_search_options(),
-            label='食材タグで検索',
-            value=[], multiple=True, with_input=True,
-            on_change=search_by_tags,
-        ).props('outlined use-chips clearable').classes('w-full')
-        ui.label('タグ右の件数は全料理での登録数です。複数選ぶと、すべてのタグを含む料理に絞ります。×で解除できます。').classes('muted text-xs')
+        def clear_tags():
+            filter_state['tags'].clear()
+            ingredient_search.refresh()
+            main_content.refresh()
+
+        @ui.refreshable
+        def ingredient_search():
+            ui.label('食材から探す').classes('font-bold text-base')
+            ui.label('分類を開いて食材をクリック。複数選ぶと、すべての食材タグを含む料理を表示します。件数は全料理での登録数です。').classes('muted text-xs')
+            if filter_state['tags']:
+                with ui.row().classes('w-full gap-2 items-center flex-wrap'):
+                    for tag in filter_state['tags']:
+                        ui.button(tag, icon='close', on_click=lambda t=tag: toggle_tag(t)).props('unelevated no-caps').classes('rounded-full')
+                    ui.button('選択をすべて解除', on_click=clear_tags).props('flat no-caps')
+            icons = {'肉類': 'restaurant', '野菜類': 'eco', '麺類': 'ramen_dining',
+                     '魚類': 'set_meal', 'その他': 'kitchen'}
+            for group, options in grouped_tag_options().items():
+                if not options:
+                    continue
+                with ui.expansion(group, icon=icons[group], value=False).props('group=ingredient-groups').classes('w-full rounded-xl border bg-white'):
+                    with ui.row().classes('w-full gap-2 flex-wrap'):
+                        for tag, label in options.items():
+                            ui.button(label, on_click=lambda t=tag: toggle_tag(t)).props(
+                                'unelevated no-caps' if tag in filter_state['tags'] else 'outline no-caps'
+                            ).classes('rounded-full')
+        ingredient_search()
         main_content()
 if __name__ == "__main__":
     ui.run(
