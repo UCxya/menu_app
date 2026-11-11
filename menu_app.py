@@ -8,7 +8,9 @@
 例: imageを images/chicken_keema.jpg にすると、その画像を使用します。
 """
 import base64
+import os
 import json
+import random
 from datetime import date, datetime, timedelta, timezone
 from uuid import uuid4
 from pathlib import Path
@@ -1595,6 +1597,32 @@ def main_page():
         if target_state['reference'] == 'female_diet':
             ui.label('女性用ダイエットモード：カロリーが低い順').classes('font-bold text-amber-900')
             ui.label('料理ごとの記載量で比較しています。少ないカロリーだけで1食を選ばず、主食・主菜・副菜を組み合わせてください。').classes('muted text-xs')
+        def choose_random_menu():
+            if not filtered_menus:
+                return
+            current = int(carousel.value or 0)
+            candidates = [i for i in range(len(filtered_menus)) if i != current]
+            index = random.choice(candidates) if candidates else 0
+            # 抽選した料理を読めるように自動スライドを停止します。
+            autoplay_state['enabled'] = False
+            autoplay_switch.set_value(False)
+            carousel.props(remove='autoplay')
+            carousel.set_value(str(index))
+            menu_detail.refresh()
+            message = f"今日はこれ！ {filtered_menus[index]['name']}"
+            if len(filtered_menus) == 1:
+                message = f"今の条件に合う料理はこの1品です：{filtered_menus[index]['name']}"
+            ui.notify(message, type='positive')
+
+        with ui.card().classes('w-full rounded-2xl bg-amber-50 shadow-none gap-2'):
+            random_button = ui.button(
+                '🎲 優柔不断モード：ランダムで選ぶ',
+                on_click=choose_random_menu,
+            ).classes('rounded-xl text-lg font-bold').props('unelevated')
+            if not filtered_menus:
+                random_button.disable()
+            ui.label('今のカテゴリー・食材タグに合う料理から提案します。もう一度押すと選び直せます。').classes('text-xs muted')
+            ui.label('提案後は自動スライドを停止します。気に入ったら「この献立にする」で決定してください。').classes('text-xs muted')
         ui.label(f'{len(filtered_menus)}件の料理').classes('muted text-sm')
         if not filtered_menus:
             ui.label(
@@ -1633,7 +1661,7 @@ def main_page():
                 if autoplay_state["enabled"]:
                     carousel.props("autoplay")  # 標準の間隔は5秒
 
-                ui.switch(
+                autoplay_switch = ui.switch(
                     "5秒ごとに自動切り替え",
                     value=autoplay_state["enabled"],
                     on_change=set_autoplay,
@@ -1779,7 +1807,8 @@ def main_page():
 if __name__ == "__main__":
     ui.run(
         title="MENU DAYS | 献立とレシピリンク",
-        host="127.0.0.1",
-        port=8081,
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", "8081")),
         reload=False,
+        show=False,
     )
