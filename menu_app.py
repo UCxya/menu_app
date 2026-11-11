@@ -1777,9 +1777,13 @@ def main_page():
             history_panel()
         ui.timer(0.2, update_history, once=True)
 if __name__ == "__main__":
+    import os
+    # クラウド環境が自動割り当てするポートを取得（ローカル時は8081）
+    port = int(os.environ.get("PORT", 8081))
     ui.run(
         title="MENU DAYS | 献立とレシピリンク",
-        host="127.0.0.1",
-        port=8081,
+        host="0.0.0.0",  # 外部からのアクセスを許可
+        port=port,
         reload=False,
+        storage_secret="pass_menuapp_2134bvemomf2",  # 適当な秘密文字列に変更してください
     )
